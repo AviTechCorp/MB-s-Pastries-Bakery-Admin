@@ -101,6 +101,31 @@ const el = (tag, className, text) => {
   return node;
 };
 
+function createImageMenu(id, label, hasImage, onUpload, onRemove) {
+  const menu = el("details", "image-menu");
+  const summary = el("summary", "button secondary small", "Image ▾");
+  summary.setAttribute("aria-label", `${label} image actions`);
+  const panel = el("div", "image-menu-panel");
+  const input = el("input", "hidden");
+  input.type = "file";
+  input.accept = "image/*";
+  input.id = `${id}-image-upload`;
+  input.name = input.id;
+  input.setAttribute("aria-label", `Choose ${label} image`);
+  input.addEventListener("change", () => {
+    if (input.files[0]) void onUpload(input);
+  });
+  const upload = el("label", "button secondary small", hasImage ? "Change image" : "Upload image");
+  upload.htmlFor = input.id;
+  const remove = el("button", "button danger small", "Remove image");
+  remove.type = "button";
+  remove.disabled = !hasImage;
+  remove.addEventListener("click", () => void onRemove());
+  panel.append(upload, input, remove);
+  menu.append(summary, panel);
+  return menu;
+}
+
 function notify(message) {
   const toast = document.getElementById("toast");
   toast.textContent = message;
@@ -168,9 +193,11 @@ function renderBulk() {
     add.type = "button";
     add.addEventListener("click", async () => {
       const bulk = structuredClone(siteData.bulk);
-      bulk[key].push({size: "", price: "", popular: false});
-      await saveField("bulk", bulk);
-      renderBulk();
+      bulk[key].push({id: crypto.randomUUID(), size: "", price: "", popular: false});
+      if (await saveField("bulk", bulk)) {
+        siteData.bulk = bulk;
+        renderBulk();
+      }
     });
     header.append(add);
     group.append(header);
@@ -207,10 +234,35 @@ function renderBulk() {
       remove.type = "button";
       remove.addEventListener("click", async () => {
         const bulk = structuredClone(siteData.bulk);
-        bulk[key].splice(index, 1);
-        if (await saveField("bulk", bulk)) renderBulk();
+        const [deleted] = bulk[key].splice(index, 1);
+        if (await saveField("bulk", bulk)) {
+          siteData.bulk = bulk;
+          if (deleted.storagePath) {
+            try {
+              await deleteObject(ref(storage, deleted.storagePath));
+            } catch (error) {
+              console.warn("Bulk size removed, but its storage image could not be deleted.", error);
+              notify("Bulk size removed, but its image could not be deleted from Storage.");
+            }
+          }
+          renderBulk();
+        }
       });
-      row.append(size, price, popularLabel, remove);
+      const imageControls = el("div", "image-controls");
+      if (item.image || item.src) {
+        const preview = el("img", "image-preview");
+        preview.src = item.image || item.src;
+        preview.alt = `${item.size || title} image preview`;
+        imageControls.append(preview);
+      }
+      imageControls.append(createImageMenu(
+        `bulk-${key}-${index}`,
+        `${title} ${item.size || `option ${index + 1}`}`,
+        Boolean(item.image || item.src),
+        input => void uploadBulkImage(key, index, input),
+        () => void removeBulkImage(key, index)
+      ), remove);
+      row.append(size, price, popularLabel, imageControls);
       group.append(row);
     });
     container.append(group);
@@ -218,12 +270,106 @@ function renderBulk() {
 }
 
 async function saveBulk() {
+  const bulk = readBulkEditor();
+  if (await saveField("bulk", bulk)) {
+    siteData.bulk = bulk;
+    notify("Bulk prices published.");
+  }
+}
+
+function readBulkEditor() {
   const bulk = structuredClone(siteData.bulk);
   document.querySelectorAll("#bulkEditor [data-field]").forEach(input => {
     const item = bulk[input.dataset.key][Number(input.dataset.index)];
     item[input.dataset.field] = input.type === "checkbox" ? input.checked : input.value.trim();
   });
-  if (await saveField("bulk", bulk)) notify("Bulk prices published.");
+  return bulk;
+}
+
+function validateImage(file) {
+  if (!file.type.startsWith("image/")) {
+    notify("Please choose an image file.");
+    return false;
+  }
+  if (file.size > 4 * 1024 * 1024) {
+    notify("That image is too large. Choose a file under 4 MB.");
+    return false;
+  }
+  return true;
+}
+
+async function uploadBulkImage(key, index, input) {
+  const file = input.files[0];
+  if (!file) return;
+  if (!validateImage(file)) {
+    input.value = "";
+    return;
+  }
+  const bulk = readBulkEditor();
+  const item = bulk[key][index];
+  if (!item) return;
+  const id = item.id || crypto.randomUUID();
+  const storagePath = `bulk/${key}/${id}/${crypto.randomUUID()}-${file.name.replace(/[^\w.-]/g, "_")}`;
+  input.disabled = true;
+  try {
+    const uploaded = await uploadBytes(ref(storage, storagePath), file, {contentType: file.type});
+    const image = await getDownloadURL(uploaded.ref);
+    const oldStoragePath = item.storagePath;
+    bulk[key][index] = {...item, id, image, storagePath};
+    if (!await saveField("bulk", bulk)) {
+      try {
+        await deleteObject(ref(storage, storagePath));
+      } catch (error) {
+        console.warn("New bulk image could not be removed after publishing failed.", error);
+      }
+      return;
+    }
+    siteData.bulk = bulk;
+    let cleanupFailed = false;
+    if (oldStoragePath && oldStoragePath !== storagePath) {
+      try {
+        await deleteObject(ref(storage, oldStoragePath));
+      } catch (error) {
+        cleanupFailed = true;
+        console.warn("Bulk image was replaced, but its previous storage file could not be removed.", error);
+      }
+    }
+    renderBulk();
+    notify(cleanupFailed
+      ? "Bulk treat image published, but the previous file could not be deleted from Storage."
+      : "Bulk treat image published.");
+  } catch (error) {
+    reportError("Uploading bulk treat image", error);
+  } finally {
+    if (input.isConnected) input.disabled = false;
+  }
+}
+
+async function removeBulkImage(key, index) {
+  const bulk = readBulkEditor();
+  const item = bulk[key][index];
+  if (!item || !(item.image || item.src)) return;
+  const oldStoragePath = item.storagePath;
+  const updatedItem = {...item};
+  delete updatedItem.image;
+  delete updatedItem.src;
+  delete updatedItem.storagePath;
+  bulk[key][index] = updatedItem;
+  if (!await saveField("bulk", bulk)) return;
+  siteData.bulk = bulk;
+  let cleanupFailed = false;
+  if (oldStoragePath) {
+    try {
+      await deleteObject(ref(storage, oldStoragePath));
+    } catch (error) {
+      cleanupFailed = true;
+      console.warn("Bulk image was removed from the menu, but its storage file could not be deleted.", error);
+    }
+  }
+  renderBulk();
+  notify(cleanupFailed
+    ? "Image removed from the menu, but its Storage file could not be deleted. Other details were kept."
+    : "Bulk image removed. Size, price, and other details were kept.");
 }
 
 function renderTreats() {
@@ -231,16 +377,6 @@ function renderTreats() {
   container.replaceChildren();
   siteData.singles.forEach((item, index) => {
     const row = el("div", "treat-row");
-    if (item.image || item.src) {
-      const image = el("img", "treat-preview");
-      image.src = item.image || item.src;
-      image.alt = `${item.name || "Treat"} preview`;
-      image.style.width = "72px";
-      image.style.height = "72px";
-      image.style.objectFit = "cover";
-      image.style.borderRadius = "10px";
-      row.append(image);
-    }
     [["name", "Name", item.name], ["desc", "Description", item.desc], ["price", "Price", item.price], ["tag", "Tag", item.tag]].forEach(([key, placeholder, value]) => {
       const input = el("input", "field");
       input.placeholder = placeholder;
@@ -251,14 +387,20 @@ function renderTreats() {
       input.dataset.index = index;
       row.append(input);
     });
-    const imageInput = el("input", "field");
-    imageInput.type = "file";
-    imageInput.accept = "image/*";
-    imageInput.id = `treat-${index}-image`;
-    imageInput.name = imageInput.id;
-    imageInput.setAttribute("aria-label", `Upload image for ${item.name || "treat"}`);
-    imageInput.addEventListener("change", () => void uploadTreatImage(index, imageInput));
-    row.append(imageInput);
+    const imageControls = el("div", "image-controls");
+    if (item.image || item.src) {
+      const preview = el("img", "image-preview");
+      preview.src = item.image || item.src;
+      preview.alt = `${item.name || "Treat"} preview`;
+      imageControls.append(preview);
+    }
+    imageControls.append(createImageMenu(
+      `treat-${index}`,
+      item.name || `treat ${index + 1}`,
+      Boolean(item.image || item.src),
+      input => void uploadTreatImage(index, input),
+      () => void removeTreatImage(index)
+    ));
     const remove = el("button", "button danger small", "Delete");
     remove.type = "button";
     remove.addEventListener("click", async () => {
@@ -277,7 +419,7 @@ function renderTreats() {
         renderTreats();
       }
     });
-    row.append(remove);
+    row.append(imageControls, remove);
     container.append(row);
   });
   if (!container.childElementCount) container.append(el("div", "empty", "No treats yet. Add one above to show it on the customer page."));
@@ -286,19 +428,14 @@ function renderTreats() {
 async function uploadTreatImage(index, input) {
   const file = input.files[0];
   if (!file) return;
-  if (!file.type.startsWith("image/")) {
-    notify("Please choose an image file.");
-    input.value = "";
-    return;
-  }
-  if (file.size > 4 * 1024 * 1024) {
-    notify("That image is too large. Choose a file under 4 MB.");
+  if (!validateImage(file)) {
     input.value = "";
     return;
   }
   const treat = siteData.singles[index];
   if (!treat) return;
-  const storagePath = `treats/${treat.id}/${file.name.replace(/[^\w.-]/g, "_")}`;
+  const treatId = treat.id || crypto.randomUUID();
+  const storagePath = `treats/${treatId}/${crypto.randomUUID()}-${file.name.replace(/[^\w.-]/g, "_")}`;
   input.disabled = true;
   try {
     const uploaded = await uploadBytes(ref(storage, storagePath), file, {contentType: file.type});
@@ -308,7 +445,7 @@ async function uploadTreatImage(index, input) {
       treats[Number(field.dataset.index)][field.dataset.field] = field.value.trim();
     });
     const oldStoragePath = treats[index].storagePath;
-    treats[index] = {...treats[index], image, storagePath};
+    treats[index] = {...treats[index], id: treatId, image, storagePath};
     if (!await saveField("singles", treats)) {
       try {
         await deleteObject(ref(storage, storagePath));
@@ -317,21 +454,55 @@ async function uploadTreatImage(index, input) {
       }
       return;
     }
+    let cleanupFailed = false;
     if (oldStoragePath && oldStoragePath !== storagePath) {
       try {
         await deleteObject(ref(storage, oldStoragePath));
       } catch (error) {
+        cleanupFailed = true;
         console.warn("Treat image was replaced, but its previous storage file could not be removed.", error);
       }
     }
     siteData.singles = treats;
     renderTreats();
-    notify("Treat image published to the customer menu.");
+    notify(cleanupFailed
+      ? "Treat image published, but the previous file could not be deleted from Storage."
+      : "Treat image published to the customer menu.");
   } catch (error) {
     reportError("Uploading treat image", error);
   } finally {
     if (input.isConnected) input.disabled = false;
   }
+}
+
+async function removeTreatImage(index) {
+  const treats = structuredClone(siteData.singles);
+  document.querySelectorAll("#treatList [data-field]").forEach(field => {
+    treats[Number(field.dataset.index)][field.dataset.field] = field.value.trim();
+  });
+  const treat = treats[index];
+  if (!treat || !(treat.image || treat.src)) return;
+  const oldStoragePath = treat.storagePath;
+  const updatedTreat = {...treat};
+  delete updatedTreat.image;
+  delete updatedTreat.src;
+  delete updatedTreat.storagePath;
+  treats[index] = updatedTreat;
+  if (!await saveField("singles", treats)) return;
+  siteData.singles = treats;
+  let cleanupFailed = false;
+  if (oldStoragePath) {
+    try {
+      await deleteObject(ref(storage, oldStoragePath));
+    } catch (error) {
+      cleanupFailed = true;
+      console.warn("Treat image was removed from the menu, but its storage file could not be deleted.", error);
+    }
+  }
+  renderTreats();
+  notify(cleanupFailed
+    ? "Image removed from the menu, but its Storage file could not be deleted. Treat details were kept."
+    : "Treat image removed. Treat details were kept.");
 }
 
 async function saveTreatFields() {
