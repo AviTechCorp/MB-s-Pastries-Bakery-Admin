@@ -13,7 +13,7 @@ import {
   deleteDoc,
   doc,
   getDoc,
-  getFirestore,
+  initializeFirestore,
   limit,
   onSnapshot,
   orderBy,
@@ -78,7 +78,7 @@ const DEFAULT_SETTINGS = {
 };
 const app = initializeApp(firebaseConfig);
 const auth = getAuth(app);
-const db = getFirestore(app);
+const db = initializeFirestore(app, {experimentalAutoDetectLongPolling: true});
 const storage = getStorage(app);
 const siteRef = doc(db, "sites", SITE_ID);
 let siteData = {
@@ -129,7 +129,7 @@ function firebaseConnectionMessage(error) {
     return "Firestore needs setup. Create/enable the Firestore database in Firebase Console, then retry.";
   }
   if (error.code === "unavailable" || /client is offline|offline/i.test(error.message || "")) {
-    return "You're signed in, but Firestore is unreachable. Check your internet and confirm a Firestore database exists in project mb-s-pastries-and-bakery.";
+    return "You're signed in, but Firebase reports Firestore as offline. Check that the Cloud Firestore API is enabled and a Firestore database has been created in project mb-s-pastries-and-bakery, then retry.";
   }
   return `You're signed in, but Firebase could not load site data: ${error.message || error.code || "unknown error"}`;
 }
@@ -179,12 +179,16 @@ function renderBulk() {
       const size = el("input", "field");
       size.placeholder = "Size";
       size.value = item.size || "";
+      size.id = `bulk-${key}-${index}-size`;
+      size.name = size.id;
       size.dataset.key = key;
       size.dataset.index = index;
       size.dataset.field = "size";
       const price = el("input", "field");
       price.placeholder = "Price";
       price.value = item.price || "";
+      price.id = `bulk-${key}-${index}-price`;
+      price.name = price.id;
       price.dataset.key = key;
       price.dataset.index = index;
       price.dataset.field = "price";
@@ -192,6 +196,9 @@ function renderBulk() {
       const popular = el("input");
       popular.type = "checkbox";
       popular.checked = Boolean(item.popular);
+      popular.id = `bulk-${key}-${index}-popular`;
+      popular.name = popular.id;
+      popularLabel.htmlFor = popular.id;
       popular.dataset.key = key;
       popular.dataset.index = index;
       popular.dataset.field = "popular";
@@ -228,6 +235,8 @@ function renderTreats() {
       const input = el("input", "field");
       input.placeholder = placeholder;
       input.value = value || "";
+      input.id = `treat-${index}-${key}`;
+      input.name = input.id;
       input.dataset.field = key;
       input.dataset.index = index;
       row.append(input);
