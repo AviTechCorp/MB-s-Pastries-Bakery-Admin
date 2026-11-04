@@ -1,0 +1,127 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="theme-color" content="#fff7ed">
+  <title>Mb's Admin | Bakery Dashboard</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Pacifico&family=Poppins:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+  <style>
+    :root{--ink:#2d1405;--ink-2:#3b2311;--cream:#fff7ed;--cream-2:#fdf2e4;--amber:#e9a84a;--amber-2:#f5c16d;--burgundy:#7a1a2e;--muted:#80684f;--line:rgba(45,20,5,.12);--shadow:0 20px 60px -20px rgba(45,20,5,.2)}
+    *{box-sizing:border-box}body{margin:0;background:var(--cream);color:var(--ink);font-family:Poppins,system-ui,sans-serif}button,input,textarea,select{font:inherit}button{cursor:pointer}.hidden{display:none!important}.wrap{width:min(1360px,100%);margin:auto}.pill{display:inline-flex;align-items:center;justify-content:center;border:0;border-radius:999px;background:var(--ink);color:white;padding:10px 16px;font-size:12px;font-weight:700;text-decoration:none}.pill.white{background:white;color:var(--ink)}.pill.outline{border:1px solid rgba(255,255,255,.25);background:transparent;color:white}.topbar{position:sticky;top:0;z-index:5;min-height:60px;background:var(--ink);color:white;display:flex;align-items:center;justify-content:space-between;gap:14px;padding:10px max(18px,calc((100vw - 1320px)/2))}.admin-label{display:flex;align-items:center;gap:10px;font-size:12px;font-weight:700}.admin-dot{width:8px;height:8px;border-radius:50%;background:#34d399}.top-actions{display:flex;gap:8px}.layout{display:flex;max-width:1400px;min-height:calc(100vh - 60px);margin:auto}.sidebar{width:270px;flex-shrink:0;background:white;border-right:1px solid var(--line);padding:24px 18px;display:flex;flex-direction:column;gap:8px}.brand{display:flex;align-items:center;gap:11px;margin:0 0 20px;padding:0 4px}.brand-icon{display:grid;place-items:center;width:42px;height:42px;border-radius:50%;background:var(--ink);color:white;font-size:20px}.brand-title{font-size:14px;font-weight:800}.brand-sub{font-size:10px;color:var(--muted)}.tab-button{border:1px solid transparent;text-align:left;border-radius:14px;background:var(--cream-2);color:var(--ink);padding:12px 14px;font-size:12px;font-weight:700;transition:.16s}.tab-button:hover{background:white;border-color:var(--line)}.tab-button.active{background:var(--ink);border-color:var(--ink);color:white;box-shadow:0 7px 18px -12px var(--ink)}.sidebar-note{margin-top:auto;background:var(--cream-2);border:1px solid var(--line);border-radius:16px;padding:14px;font-size:10px;line-height:1.75;color:var(--muted)}.sidebar-note b{display:block;color:var(--ink);font-size:10px;text-transform:uppercase;letter-spacing:.08em;margin-bottom:5px}.main{min-width:0;flex:1;padding:30px;background:var(--cream)}.panel{max-width:1100px;margin:0 auto}.page-head{display:flex;align-items:flex-end;justify-content:space-between;gap:16px;margin-bottom:22px}.page-head h1{font-size:26px;letter-spacing:-.6px;margin:0}.page-head p{margin:5px 0 0;color:var(--muted);font-size:11px}.surface{background:white;border:1px solid var(--line);border-radius:20px;padding:22px;box-shadow:0 10px 30px -22px rgba(45,20,5,.24)}.metrics{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:13px;margin:20px 0}.metric{border:1px solid var(--line);border-radius:18px;background:white;padding:18px}.metric.dark{background:var(--ink);color:white}.metric.amber{background:var(--amber-2)}.metric-label{text-transform:uppercase;letter-spacing:.08em;font-size:9px;font-weight:800;color:var(--muted)}.metric.dark .metric-label{color:#d7bda0}.metric-value{font-size:26px;font-weight:800;margin:3px 0}.metric-note{font-size:10px;color:var(--muted)}.metric.dark .metric-note{color:#d7bda0}.section-title{font-size:16px;font-weight:800;margin:0 0 4px}.section-sub{font-size:11px;color:var(--muted);margin:0 0 16px}.form-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px}.field-label{display:block;font-size:10px;font-weight:700;margin-bottom:5px}.field{width:100%;border:1px solid var(--line);background:var(--cream);color:var(--ink);border-radius:12px;padding:10px 12px;font-size:12px;outline:none}.field:focus{border-color:var(--amber);box-shadow:0 0 0 3px rgba(233,168,74,.15)}.button{border:0;border-radius:999px;background:var(--amber);color:var(--ink);padding:10px 16px;font-size:11px;font-weight:800}.button:hover{filter:brightness(.97)}.button.secondary{background:var(--cream-2);border:1px solid var(--line)}.button.danger{background:#fff0f0;color:#a52332}.button.small{padding:7px 11px;font-size:10px}.stack{display:grid;gap:14px}.bulk-group{border:1px solid var(--line);border-radius:16px;padding:16px;background:var(--cream)}.bulk-head{display:flex;align-items:center;justify-content:space-between;gap:10px;margin-bottom:12px}.bulk-head h3{margin:0;font-size:14px}.bulk-row{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr) auto auto;gap:8px;align-items:center;margin-top:8px}.check{display:flex;align-items:center;gap:5px;font-size:10px;white-space:nowrap}.check input{accent-color:var(--amber)}.actions{display:flex;gap:8px;flex-wrap:wrap;margin-top:14px}.treat-list,.gallery-list,.inquiry-list{display:grid;gap:10px;margin-top:16px}.treat-row{display:grid;grid-template-columns:1.15fr 1.4fr .75fr .8fr auto;gap:8px;align-items:center;padding:12px;border:1px solid var(--line);border-radius:14px;background:white}.gallery-grid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:12px;margin-top:18px}.gallery-card{overflow:hidden;border:1px solid var(--line);border-radius:16px;background:white}.gallery-card img{width:100%;height:160px;display:block;object-fit:cover;background:var(--cream-2)}.gallery-copy{padding:12px}.gallery-copy h3{margin:0;font-size:12px}.gallery-copy p{margin:5px 0 0;color:var(--muted);font-size:10px;line-height:1.6}.gallery-actions{display:flex;gap:6px;flex-wrap:wrap;margin-top:10px}.featured{color:#80520e;background:#fff0ce;border-radius:99px;font-size:9px;padding:4px 8px;font-weight:800}.inquiry{border:1px solid var(--line);border-radius:16px;background:white;padding:15px;display:flex;justify-content:space-between;align-items:flex-start;gap:14px}.inquiry h3{font-size:13px;margin:0}.inquiry p{font-size:10px;color:var(--muted);margin:5px 0 0;white-space:pre-line}.empty{padding:25px;border:1px dashed var(--line);border-radius:16px;color:var(--muted);text-align:center;font-size:12px}.login-screen{min-height:100vh;display:grid;place-items:center;padding:20px;background:radial-gradient(circle at 15% 15%,#fbe8c8 0,transparent 35%),var(--cream)}    .login-card{width:min(420px,100%);border:1px solid var(--line);border-radius:24px;background:white;padding:30px;box-shadow:var(--shadow)}.login-card .brand{margin-bottom:20px}.login-card h1{font-size:22px;margin:0}.login-card>p{font-size:11px;color:var(--muted);line-height:1.7}.login-card form{display:grid;gap:10px;margin-top:20px}.auth-switch{display:flex;align-items:center;gap:10px;margin:16px 0;color:var(--muted);font-size:10px}.auth-switch:before,.auth-switch:after{content:"";height:1px;flex:1;background:var(--line)}.error{font-size:11px;color:#b42332}.toast{position:fixed;right:20px;bottom:20px;z-index:10;background:var(--ink);color:white;padding:12px 16px;border-radius:12px;font-size:11px;box-shadow:var(--shadow)}
+    .connection-status{display:flex;align-items:center;justify-content:space-between;gap:12px;padding:10px max(18px,calc((100vw - 1320px)/2));background:#fff4d6;color:#694300;font-size:11px}.connection-status[data-state="connected"]{background:#e8f7ed;color:#17633a}.connection-status[data-state="error"]{background:#fff0f0;color:#91212b}.connection-status p{margin:0}.connection-status button{flex-shrink:0}
+    @media(max-width:900px){.sidebar{width:230px}.main{padding:22px}.metrics{grid-template-columns:repeat(2,minmax(0,1fr))}.treat-row{grid-template-columns:1fr 1fr}.gallery-grid{grid-template-columns:repeat(2,minmax(0,1fr))}}
+    @media(max-width:650px){.topbar{padding:9px 12px}.admin-label{font-size:10px}.top-actions .pill{padding:8px 10px;font-size:10px}.top-actions .outline{display:none}.layout{display:block}.sidebar{width:100%;padding:12px;border-right:0;border-bottom:1px solid var(--line);display:block}.brand{display:none}.tabs{display:flex;gap:7px;overflow-x:auto;padding-bottom:2px}.tab-button{white-space:nowrap;padding:9px 12px;border-radius:999px;font-size:10px}.sidebar-note{display:none}.main{padding:18px 12px}.page-head{align-items:flex-start;flex-direction:column}.page-head h1{font-size:22px}.surface{padding:16px}.bulk-row{grid-template-columns:1fr 1fr auto}.bulk-row .check{grid-column:span 2}.gallery-grid{grid-template-columns:repeat(2,minmax(0,1fr))}.gallery-card img{height:130px}.inquiry{flex-direction:column}.form-grid{grid-template-columns:1fr}}
+    @media(max-width:390px){.gallery-grid{grid-template-columns:1fr}.metrics{gap:8px}.metric{padding:13px}.metric-value{font-size:22px}}
+  </style>
+</head>
+<body>
+  <section class="login-screen" id="loginScreen">
+    <div class="login-card">
+      <div class="brand"><span class="brand-icon">👩🏾‍🍳</span><span><span class="brand-title">Mb's Admin</span><br><span class="brand-sub">Bakery dashboard</span></span></div>
+      <h1>Welcome back</h1>
+      <p>Sign in to update your menu, photos, and bakery details. Your updates publish to the customer website on every device.</p>
+      <form id="loginForm">
+        <input class="field" id="emailInput" type="email" autocomplete="username" placeholder="Admin email" required>
+        <input class="field" id="passwordInput" type="password" autocomplete="current-password" placeholder="Password" required>
+        <input class="field hidden" id="confirmPasswordInput" type="password" autocomplete="new-password" placeholder="Confirm password" minlength="12">
+        <button class="button" id="authSubmit" type="submit">Sign in</button>
+        <span class="error hidden" id="loginError">That password did not match. Please try again.</span>
+      </form>
+      <div class="auth-switch">or</div>
+      <button class="button secondary" id="toggleCreateAccount" type="button">Create admin account</button>
+      <p id="authHelp">Use the configured admin email. Account creation sends a verification email; dashboard access is enabled only after verification.</p>
+    </div>
+  </section>
+  <div id="dashboard" class="hidden">
+    <header class="topbar">
+      <div class="admin-label"><span class="admin-dot"></span><span>You are in Admin Mode — customers can't see this bar</span></div>
+      <div class="top-actions"><a class="pill white" href="../customer/customer.html" target="_blank" rel="noopener">View Customer Site</a><button class="pill outline" id="logoutButton" type="button">Log out</button></div>
+    </header>
+    <div class="connection-status" id="connectionStatus" data-state="connecting" role="status" aria-live="polite">
+      <p id="connectionMessage">Signed in. Connecting to Firebase…</p>
+      <button class="button secondary small hidden" id="retryConnection" type="button">Retry connection</button>
+    </div>
+    <div class="layout">
+      <aside class="sidebar">
+        <div class="brand"><span class="brand-icon">👩🏾‍🍳</span><span><span class="brand-title">Mb's Admin</span><br><span class="brand-sub">Bakery dashboard</span></span></div>
+        <nav class="tabs" aria-label="Admin sections">
+          <button class="tab-button active" data-tab="overview" type="button">📊 Overview</button>
+          <button class="tab-button" data-tab="bulk" type="button">🥖 Bulk Prices</button>
+          <button class="tab-button" data-tab="singles" type="button">🧁 Single Treats</button>
+          <button class="tab-button" data-tab="gallery" type="button">📸 Gallery</button>
+          <button class="tab-button" data-tab="orders" type="button">💬 Orders</button>
+          <button class="tab-button" data-tab="settings" type="button">⚙️ Settings</button>
+        </nav>
+        <div class="sidebar-note"><b>Changes sync live</b>Published changes are stored in Firebase and appear on the customer website across browsers and devices.</div>
+      </aside>
+      <main class="main">
+        <section class="panel tab-panel" id="tab-overview">
+          <div class="page-head"><div><h1>Admin Overview</h1><p>Your bakery at a glance. Changes are saved as you edit.</p></div><div class="brand-sub" id="overviewBusiness"></div></div>
+          <div class="metrics">
+            <article class="metric"><div class="metric-label">Bulk options</div><div class="metric-value" id="metricBulk">0</div><div class="metric-note">Scones and biscuit sizes</div></article>
+            <article class="metric dark"><div class="metric-label">Single treats</div><div class="metric-value" id="metricTreats">0</div><div class="metric-note">On the customer menu</div></article>
+            <article class="metric"><div class="metric-label">Gallery photos</div><div class="metric-value" id="metricPhotos">0</div><div class="metric-note">Shared with customers</div></article>
+            <article class="metric amber"><div class="metric-label">Order enquiries</div><div class="metric-value" id="metricOrders">0</div><div class="metric-note">Saved to Firebase</div></article>
+          </div>
+          <div class="surface"><h2 class="section-title">Quick start</h2><p class="section-sub">Choose a section from the menu to update your customer page.</p><div class="actions"><button class="button" data-open-tab="gallery" type="button">Add a bake photo</button><button class="button secondary" data-open-tab="bulk" type="button">Update bulk prices</button><button class="button secondary" data-open-tab="singles" type="button">Edit treats</button></div></div>
+        </section>
+        <section class="panel tab-panel hidden" id="tab-bulk">
+          <div class="page-head"><div><h1>Bulk Prices</h1><p>Set the sizes and prices shown for plain scones and biscuits.</p></div></div>
+          <div class="surface"><div class="stack" id="bulkEditor"></div><div class="actions"><button class="button" id="saveBulk" type="button">Save bulk prices</button></div></div>
+        </section>
+        <section class="panel tab-panel hidden" id="tab-singles">
+          <div class="page-head"><div><h1>Single Treats</h1><p>Add, update, or remove items from the customer menu.</p></div></div>
+          <div class="surface">
+            <h2 class="section-title">Add a treat</h2><p class="section-sub">Name and price are required.</p>
+            <div class="form-grid">
+              <label><span class="field-label">Name</span><input class="field" id="newTreatName" placeholder="e.g. Cinnamon Rolls"></label>
+              <label><span class="field-label">Price</span><input class="field" id="newTreatPrice" placeholder="e.g. R30"></label>
+              <label><span class="field-label">Description</span><input class="field" id="newTreatDesc" placeholder="Short description"></label>
+              <label><span class="field-label">Tag (optional)</span><input class="field" id="newTreatTag" placeholder="e.g. Best Seller"></label>
+            </div>
+            <div class="actions"><button class="button" id="addTreat" type="button">Add treat</button></div>
+            <div class="treat-list" id="treatList"></div>
+          </div>
+        </section>
+        <section class="panel tab-panel hidden" id="tab-gallery">
+          <div class="page-head"><div><h1>Gallery Manager</h1><p>Upload bake photos and choose what customers see in the gallery.</p></div></div>
+          <div class="surface">
+            <h2 class="section-title">Add a bake photo</h2><p class="section-sub">Choose an image under 4 MB for reliable local storage.</p>
+            <div class="form-grid">
+              <label><span class="field-label">Photo</span><input class="field" id="galleryFile" type="file" accept="image/*"></label>
+              <label><span class="field-label">Title</span><input class="field" id="galleryTitle" placeholder="e.g. Fresh Scones Today"></label>
+              <label><span class="field-label">Category</span><input class="field" id="galleryCategory" placeholder="e.g. Scones"></label>
+              <label><span class="field-label">Price (optional)</span><input class="field" id="galleryPrice" placeholder="e.g. R150"></label>
+              <label style="grid-column:1/-1"><span class="field-label">Description (optional)</span><input class="field" id="galleryDesc" placeholder="A short caption for customers"></label>
+            </div>
+            <div class="actions"><button class="button" id="addPhoto" type="button">Add to customer gallery</button></div>
+            <div class="gallery-grid" id="galleryList"></div>
+          </div>
+        </section>
+        <section class="panel tab-panel hidden" id="tab-orders">
+          <div class="page-head"><div><h1>Order Enquiries</h1><p>Orders started from the customer page on this browser appear here.</p></div><button class="button secondary" id="clearOrders" type="button">Clear enquiries</button></div>
+          <div class="surface"><div class="inquiry-list" id="inquiryList"></div></div>
+        </section>
+        <section class="panel tab-panel hidden" id="tab-settings">
+          <div class="page-head"><div><h1>Settings</h1><p>Update the business details shown on the customer page.</p></div></div>
+          <div class="surface">
+            <div class="form-grid">
+              <label><span class="field-label">Business name</span><input class="field" id="settingName"></label>
+              <label><span class="field-label">Phone</span><input class="field" id="settingPhone" type="tel"></label>
+              <label><span class="field-label">TikTok name</span><input class="field" id="settingTikTok"></label>
+              <label><span class="field-label">Delivery note</span><input class="field" id="settingDelivery"></label>
+            </div>
+            <div class="actions"><button class="button" id="saveSettings" type="button">Save business details</button></div>
+          </div>
+          <div class="surface" style="margin-top:14px"><h2 class="section-title">About syncing</h2><p class="section-sub" style="margin-bottom:0">Published content is stored in Firebase Firestore and gallery photos in Firebase Storage. The customer page subscribes to Firestore, so updates appear across browsers and devices without sharing local storage.</p></div>
+        </section>
+      </main>
+    </div>
+  </div>
+  <div class="toast hidden" id="toast" role="status" aria-live="polite"></div>
+  <script type="module" src="./app.js"></script>
+</body>
+</html>
