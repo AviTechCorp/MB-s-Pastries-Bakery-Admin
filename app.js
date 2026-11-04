@@ -231,6 +231,16 @@ function renderTreats() {
   container.replaceChildren();
   siteData.singles.forEach((item, index) => {
     const row = el("div", "treat-row");
+    if (item.image || item.src) {
+      const image = el("img", "treat-preview");
+      image.src = item.image || item.src;
+      image.alt = `${item.name || "Treat"} preview`;
+      image.style.width = "72px";
+      image.style.height = "72px";
+      image.style.objectFit = "cover";
+      image.style.borderRadius = "10px";
+      row.append(image);
+    }
     [["name", "Name", item.name], ["desc", "Description", item.desc], ["price", "Price", item.price], ["tag", "Tag", item.tag]].forEach(([key, placeholder, value]) => {
       const input = el("input", "field");
       input.placeholder = placeholder;
@@ -241,16 +251,87 @@ function renderTreats() {
       input.dataset.index = index;
       row.append(input);
     });
+    const imageInput = el("input", "field");
+    imageInput.type = "file";
+    imageInput.accept = "image/*";
+    imageInput.id = `treat-${index}-image`;
+    imageInput.name = imageInput.id;
+    imageInput.setAttribute("aria-label", `Upload image for ${item.name || "treat"}`);
+    imageInput.addEventListener("change", () => void uploadTreatImage(index, imageInput));
+    row.append(imageInput);
     const remove = el("button", "button danger small", "Delete");
     remove.type = "button";
     remove.addEventListener("click", async () => {
-      const treats = siteData.singles.filter((_, itemIndex) => itemIndex !== index);
-      if (await saveField("singles", treats)) renderTreats();
+      const treats = [...siteData.singles];
+      const [deleted] = treats.splice(index, 1);
+      if (await saveField("singles", treats)) {
+        if (deleted.storagePath) {
+          try {
+            await deleteObject(ref(storage, deleted.storagePath));
+          } catch (error) {
+            console.warn("Treat removed, but its storage image could not be deleted.", error);
+            notify("Treat removed, but its image could not be deleted from Storage.");
+          }
+        }
+        siteData.singles = treats;
+        renderTreats();
+      }
     });
     row.append(remove);
     container.append(row);
   });
   if (!container.childElementCount) container.append(el("div", "empty", "No treats yet. Add one above to show it on the customer page."));
+}
+
+async function uploadTreatImage(index, input) {
+  const file = input.files[0];
+  if (!file) return;
+  if (!file.type.startsWith("image/")) {
+    notify("Please choose an image file.");
+    input.value = "";
+    return;
+  }
+  if (file.size > 4 * 1024 * 1024) {
+    notify("That image is too large. Choose a file under 4 MB.");
+    input.value = "";
+    return;
+  }
+  const treat = siteData.singles[index];
+  if (!treat) return;
+  const storagePath = `treats/${treat.id}/${file.name.replace(/[^\w.-]/g, "_")}`;
+  input.disabled = true;
+  try {
+    const uploaded = await uploadBytes(ref(storage, storagePath), file, {contentType: file.type});
+    const image = await getDownloadURL(uploaded.ref);
+    const treats = structuredClone(siteData.singles);
+    document.querySelectorAll("#treatList [data-field]").forEach(field => {
+      treats[Number(field.dataset.index)][field.dataset.field] = field.value.trim();
+    });
+    const oldStoragePath = treats[index].storagePath;
+    treats[index] = {...treats[index], image, storagePath};
+    if (!await saveField("singles", treats)) {
+      try {
+        await deleteObject(ref(storage, storagePath));
+      } catch (cleanupError) {
+        console.warn("Uploaded treat image could not be removed after publishing failed.", cleanupError);
+      }
+      return;
+    }
+    if (oldStoragePath && oldStoragePath !== storagePath) {
+      try {
+        await deleteObject(ref(storage, oldStoragePath));
+      } catch (error) {
+        console.warn("Treat image was replaced, but its previous storage file could not be removed.", error);
+      }
+    }
+    siteData.singles = treats;
+    renderTreats();
+    notify("Treat image published to the customer menu.");
+  } catch (error) {
+    reportError("Uploading treat image", error);
+  } finally {
+    if (input.isConnected) input.disabled = false;
+  }
 }
 
 async function saveTreatFields() {
@@ -264,19 +345,59 @@ async function saveTreatFields() {
 async function addTreat() {
   const name = document.getElementById("newTreatName").value.trim();
   const price = document.getElementById("newTreatPrice").value.trim();
+  const imageFile = document.getElementById("newTreatImage").files[0];
   if (!name || !price) {
     notify("Please enter a treat name and price.");
     return;
   }
-  const treats = [...siteData.singles, {
-    id: crypto.randomUUID(),
+  if (imageFile && !imageFile.type.startsWith("image/")) {
+    notify("Please choose an image file.");
+    return;
+  }
+  if (imageFile && imageFile.size > 4 * 1024 * 1024) {
+    notify("That image is too large. Choose a file under 4 MB.");
+    return;
+  }
+  const id = crypto.randomUUID();
+  const treat = {
+    id,
     name,
     price,
     desc: document.getElementById("newTreatDesc").value.trim(),
     tag: document.getElementById("newTreatTag").value.trim()
-  }];
-  if (!await saveField("singles", treats)) return;
-  ["newTreatName", "newTreatPrice", "newTreatDesc", "newTreatTag"].forEach(id => document.getElementById(id).value = "");
+  };
+  let storagePath;
+  try {
+    if (imageFile) {
+      storagePath = `treats/${id}/${imageFile.name.replace(/[^\w.-]/g, "_")}`;
+      const uploaded = await uploadBytes(ref(storage, storagePath), imageFile, {contentType: imageFile.type});
+      treat.image = await getDownloadURL(uploaded.ref);
+      treat.storagePath = storagePath;
+    }
+    const treats = [...siteData.singles, treat];
+    if (!await saveField("singles", treats)) {
+      if (storagePath) {
+        try {
+          await deleteObject(ref(storage, storagePath));
+        } catch (cleanupError) {
+          console.warn("New treat image could not be removed after publishing failed.", cleanupError);
+        }
+      }
+      return;
+    }
+    siteData.singles = treats;
+  } catch (error) {
+    if (storagePath) {
+      try {
+        await deleteObject(ref(storage, storagePath));
+      } catch (cleanupError) {
+        console.warn("New treat image could not be removed after publishing failed.", cleanupError);
+      }
+    }
+    reportError("Adding treat", error);
+    return;
+  }
+  ["newTreatName", "newTreatPrice", "newTreatDesc", "newTreatTag", "newTreatImage"].forEach(id => document.getElementById(id).value = "");
   renderTreats();
   notify("Treat published to the customer menu.");
 }
@@ -603,7 +724,9 @@ document.querySelectorAll(".tab-button").forEach(button => button.addEventListen
 document.querySelectorAll("[data-open-tab]").forEach(button => button.addEventListener("click", () => showTab(button.dataset.openTab)));
 document.getElementById("saveBulk").addEventListener("click", saveBulk);
 document.getElementById("addTreat").addEventListener("click", addTreat);
-document.getElementById("treatList").addEventListener("change", saveTreatFields);
+document.getElementById("treatList").addEventListener("change", event => {
+  if (event.target.matches("[data-field]")) void saveTreatFields();
+});
 document.getElementById("addPhoto").addEventListener("click", uploadNewPhoto);
 document.getElementById("saveSettings").addEventListener("click", saveSettings);
 document.getElementById("clearOrders").addEventListener("click", async () => {
